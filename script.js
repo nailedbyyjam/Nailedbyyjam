@@ -1,10 +1,4 @@
 // ======================================================
-// @NAILEDBYYJAM
-// COMPLETE SCRIPT.JS
-// ======================================================
-
-
-// ======================================================
 // SUPABASE CONNECTION
 // ======================================================
 
@@ -148,20 +142,16 @@ const nailPrices = {
 
 function calculateTotal() {
 
-    if (!nailLengthInput) {
-        return 0;
-    }
-
     const nailLength =
-        nailLengthInput.value;
+    nailLengthInput.value;
 
     const basePrice =
-        nailPrices[nailLength] || 0;
+    nailPrices[nailLength] || 0;
 
     const selectedDesigns =
-        document.querySelectorAll(
-            'input[name="design"]:checked'
-        );
+    document.querySelectorAll(
+        'input[name="design"]:checked'
+    );
 
     let addonTotal = 0;
 
@@ -169,43 +159,27 @@ function calculateTotal() {
         function(design) {
 
             addonTotal +=
-                Number(
-                    design.dataset.price
-                ) || 0;
+            Number(
+                design.dataset.price
+            ) || 0;
 
         }
     );
 
     const total =
-        basePrice + addonTotal;
+    basePrice + addonTotal;
 
+    basePriceDisplay.textContent =
+    "$" +
+    basePrice.toFixed(2);
 
-    if (basePriceDisplay) {
+    addonTotalDisplay.textContent =
+    "$" +
+    addonTotal.toFixed(2);
 
-        basePriceDisplay.textContent =
-            "$" +
-            basePrice.toFixed(2);
-
-    }
-
-
-    if (addonTotalDisplay) {
-
-        addonTotalDisplay.textContent =
-            "$" +
-            addonTotal.toFixed(2);
-
-    }
-
-
-    if (totalDisplay) {
-
-        totalDisplay.textContent =
-            "$" +
-            total.toFixed(2);
-
-    }
-
+    totalDisplay.textContent =
+    "$" +
+    total.toFixed(2);
 
     return total;
 
@@ -216,15 +190,10 @@ function calculateTotal() {
 // PRICE EVENTS
 // ======================================================
 
-if (nailLengthInput) {
-
-    nailLengthInput.addEventListener(
-        "change",
-        calculateTotal
-    );
-
-}
-
+nailLengthInput.addEventListener(
+    "change",
+    calculateTotal
+);
 
 document
 .querySelectorAll(
@@ -249,10 +218,9 @@ document
 async function loadBlockedDates() {
 
     const result =
-        await supabaseClient
-        .from("blocked_dates")
-        .select("date");
-
+    await supabaseClient
+    .from("blocked_dates")
+    .select("date");
 
     if (result.error) {
 
@@ -265,16 +233,15 @@ async function loadBlockedDates() {
 
     }
 
-
     blockedDates =
-        (result.data || [])
-        .map(
-            function(item) {
+    (result.data || [])
+    .map(
+        function(item) {
 
-                return item.date;
+            return item.date;
 
-            }
-        );
+        }
+    );
 
 }
 
@@ -302,10 +269,8 @@ function normalizeTime(time) {
 
     }
 
-
     const parts =
-        String(time).split(":");
-
+    String(time).split(":");
 
     if (parts.length < 2) {
 
@@ -313,20 +278,15 @@ function normalizeTime(time) {
 
     }
 
-
     const hour =
-        String(
-            parseInt(
-                parts[0],
-                10
-            )
-        ).padStart(2, "0");
-
+    String(
+        parseInt(parts[0], 10)
+    )
+    .padStart(2, "0");
 
     const minutes =
-        String(parts[1])
-        .padStart(2, "0");
-
+    String(parts[1])
+    .padStart(2, "0");
 
     return (
         hour +
@@ -346,7 +306,6 @@ async function loadBookedTimes(date) {
 
     bookedTimes = [];
 
-
     if (!date) {
 
         resetTimeOptions();
@@ -354,7 +313,6 @@ async function loadBookedTimes(date) {
         return;
 
     }
-
 
     if (isDateBlocked(date)) {
 
@@ -364,23 +322,19 @@ async function loadBookedTimes(date) {
 
     }
 
-
     timeInput.innerHTML = "";
 
-
     const loading =
-        document.createElement("option");
-
+    document.createElement("option");
 
     loading.value = "";
 
     loading.textContent =
-        "Checking availability...";
+    "Checking availability...";
 
     loading.disabled = true;
 
     loading.selected = true;
-
 
     timeInput.appendChild(
         loading
@@ -388,10 +342,10 @@ async function loadBookedTimes(date) {
 
 
     const result =
-        await supabaseClient
-        .from("bookings")
-        .select("time,status")
-        .eq("date", date);
+    await supabaseClient
+    .from("bookings")
+    .select("time,status")
+    .eq("date", date);
 
 
     if (result.error) {
@@ -401,14 +355,7 @@ async function loadBookedTimes(date) {
             result.error
         );
 
-
         resetTimeOptions();
-
-        message.textContent =
-            "Could not check appointment availability.";
-
-        message.className =
-            "error";
 
         return;
 
@@ -416,67 +363,67 @@ async function loadBookedTimes(date) {
 
 
     bookedTimes =
-        (result.data || [])
-        .filter(
-            function(booking) {
+    (result.data || [])
+    .filter(
+        function(booking) {
 
-                return (
-                    booking.status !==
-                    "Cancelled"
-                );
+            return (
+                booking.status !==
+                "Cancelled"
+            );
 
-            }
-        )
-        .map(
-            function(booking) {
+        }
+    )
+    .map(
+        function(booking) {
 
-                return normalizeTime(
-                    booking.time
-                );
+            return normalizeTime(
+                booking.time
+            );
 
-            }
-        );
+        }
+    );
 
 
     renderTimeOptions();
 
 
     const availableCount =
-        appointmentTimes.filter(
-            function(time) {
+    appointmentTimes.filter(
+        function(time) {
 
-                return !bookedTimes.includes(
-                    time.value
-                );
+            return !bookedTimes.includes(
+                time.value
+            );
 
-            }
-        ).length;
+        }
+    ).length;
 
 
     if (availableCount === 0) {
 
         message.textContent =
-            "No appointment times are available on this date. Please choose another date. 💗";
+        "No appointment times are available on this date. Please choose another date. 💗";
 
         message.className =
-            "error";
+        "error";
 
     }
 
     else {
 
         message.textContent =
-            availableCount +
-            " appointment time" +
-            (
-                availableCount === 1
-                    ? ""
-                    : "s"
-            ) +
-            " available. 💗";
+        availableCount +
+        " appointment time" +
+        (
+            availableCount === 1
+            ? ""
+            : "s"
+        ) +
+        " available. 💗";
 
         message.className =
-            "success";
+        "success";
 
     }
 
@@ -491,18 +438,15 @@ function renderTimeOptions() {
 
     timeInput.innerHTML = "";
 
-
     const defaultOption =
-        document.createElement("option");
-
+    document.createElement("option");
 
     defaultOption.value = "";
 
     defaultOption.textContent =
-        "Select a time";
+    "Select a time";
 
     defaultOption.selected = true;
-
 
     timeInput.appendChild(
         defaultOption
@@ -513,13 +457,10 @@ function renderTimeOptions() {
         function(time) {
 
             const option =
-                document.createElement(
-                    "option"
-                );
-
+            document.createElement("option");
 
             option.value =
-                time.value;
+            time.value;
 
 
             if (
@@ -529,19 +470,19 @@ function renderTimeOptions() {
             ) {
 
                 option.textContent =
-                    time.label +
-                    " — BOOKED";
+                time.label +
+                " — BOOKED";
 
                 option.disabled =
-                    true;
+                true;
 
             }
 
             else {
 
                 option.textContent =
-                    time.label +
-                    " — Available";
+                time.label +
+                " — Available";
 
             }
 
@@ -564,18 +505,15 @@ function resetTimeOptions() {
 
     timeInput.innerHTML = "";
 
-
     const option =
-        document.createElement("option");
-
+    document.createElement("option");
 
     option.value = "";
 
     option.textContent =
-        "Select a date first";
+    "Select a date first";
 
     option.selected = true;
-
 
     timeInput.appendChild(
         option
@@ -592,20 +530,17 @@ function disableAllTimes() {
 
     timeInput.innerHTML = "";
 
-
     const first =
-        document.createElement("option");
-
+    document.createElement("option");
 
     first.value = "";
 
     first.textContent =
-        "Date unavailable";
+    "Date unavailable";
 
     first.disabled = true;
 
     first.selected = true;
-
 
     timeInput.appendChild(
         first
@@ -616,23 +551,17 @@ function disableAllTimes() {
         function(time) {
 
             const option =
-                document.createElement(
-                    "option"
-                );
-
+            document.createElement("option");
 
             option.value =
-                time.value;
-
+            time.value;
 
             option.textContent =
-                time.label +
-                " — Unavailable";
-
+            time.label +
+            " — Unavailable";
 
             option.disabled =
-                true;
-
+            true;
 
             timeInput.appendChild(
                 option
@@ -648,118 +577,109 @@ function disableAllTimes() {
 // DATE CHANGE
 // ======================================================
 
-if (dateInput) {
+dateInput.addEventListener(
+    "change",
+    async function() {
 
-    dateInput.addEventListener(
-        "change",
-        async function() {
+        const date =
+        dateInput.value;
 
-            const date =
-                dateInput.value;
+        message.textContent = "";
 
-
-            message.textContent = "";
-
-            message.className = "";
+        message.className = "";
 
 
-            if (!date) {
+        if (!date) {
 
-                resetTimeOptions();
+            resetTimeOptions();
 
-                return;
-
-            }
-
-
-            if (isDateBlocked(date)) {
-
-                message.textContent =
-                    "This date is unavailable. Please choose another date. 💗";
-
-                message.className =
-                    "error";
-
-
-                disableAllTimes();
-
-                return;
-
-            }
-
-
-            await loadBookedTimes(
-                date
-            );
+            return;
 
         }
-    );
 
-}
+
+        if (isDateBlocked(date)) {
+
+            message.textContent =
+            "This date is unavailable. Please choose another date. 💗";
+
+            message.className =
+            "error";
+
+            disableAllTimes();
+
+            return;
+
+        }
+
+
+        await loadBookedTimes(date);
+
+    }
+);
 
 
 // ======================================================
 // TIME CHANGE
 // ======================================================
 
-if (timeInput) {
+timeInput.addEventListener(
+    "change",
+    function() {
 
-    timeInput.addEventListener(
-        "change",
-        function() {
-
-            const selectedTime =
-                timeInput.value;
+        const selectedTime =
+        timeInput.value;
 
 
-            if (
-                bookedTimes.includes(
-                    normalizeTime(
-                        selectedTime
-                    )
-                )
-            ) {
+        if (
+            bookedTimes.includes(
+                normalizeTime(selectedTime)
+            )
+        ) {
 
-                message.textContent =
-                    "That time is already booked.";
+            message.textContent =
+            "That time is already booked.";
 
-                message.className =
-                    "error";
+            message.className =
+            "error";
 
+            timeInput.value = "";
 
-                timeInput.value = "";
-
-                return;
-
-            }
-
-
-            message.textContent = "";
-
-            message.className = "";
+            return;
 
         }
-    );
 
-}
+
+        message.textContent = "";
+
+        message.className = "";
+
+    }
+);
 
 
 // ======================================================
 // MIN DATE
 // ======================================================
 
-if (dateInput) {
+const today =
+new Date()
+.toISOString()
+.split("T")[0];
 
-    const today =
-        new Date()
-        .toISOString()
-        .split("T")[0];
+dateInput.min =
+today;
 
 
-    dateInput.min =
-        today;
+// ======================================================
+// INITIAL LOAD
+// ======================================================
 
-}
+loadBlockedDates();
+
+resetTimeOptions();
+
+calculateTotal();
 
 
 // ======================================================
@@ -771,14 +691,16 @@ async function checkTimeAvailability(
     time
 ) {
 
-    if (isDateBlocked(date)) {
+    if (
+        isDateBlocked(date)
+    ) {
 
         return {
 
             available: false,
 
             reason:
-                "This date is unavailable."
+            "This date is unavailable."
 
         };
 
@@ -786,11 +708,11 @@ async function checkTimeAvailability(
 
 
     const result =
-        await supabaseClient
-        .from("bookings")
-        .select("id,status")
-        .eq("date", date)
-        .eq("time", time);
+    await supabaseClient
+    .from("bookings")
+    .select("id,status")
+    .eq("date", date)
+    .eq("time", time);
 
 
     if (result.error) {
@@ -800,7 +722,7 @@ async function checkTimeAvailability(
             available: false,
 
             reason:
-                "Could not verify availability."
+            "Could not verify availability."
 
         };
 
@@ -808,17 +730,17 @@ async function checkTimeAvailability(
 
 
     const activeBookings =
-        (result.data || [])
-        .filter(
-            function(booking) {
+    (result.data || [])
+    .filter(
+        function(booking) {
 
-                return (
-                    booking.status !==
-                    "Cancelled"
-                );
+            return (
+                booking.status !==
+                "Cancelled"
+            );
 
-            }
-        );
+        }
+    );
 
 
     if (
@@ -830,7 +752,7 @@ async function checkTimeAvailability(
             available: false,
 
             reason:
-                "That appointment time was just booked. Please choose another time."
+            "That appointment time was just booked. Please choose another time."
 
         };
 
@@ -852,314 +774,302 @@ async function checkTimeAvailability(
 // SUBMIT BOOKING
 // ======================================================
 
-if (bookingForm) {
+bookingForm.addEventListener(
+    "submit",
+    async function(event) {
 
-    bookingForm.addEventListener(
-        "submit",
-        async function(event) {
-
-            event.preventDefault();
+        event.preventDefault();
 
 
-            const name =
-                document
-                .getElementById("name")
-                .value
-                .trim();
+        const name =
+        document
+        .getElementById("name")
+        .value
+        .trim();
 
 
-            const email =
-                document
-                .getElementById("email")
-                .value
-                .trim()
-                .toLowerCase();
+        const email =
+        document
+        .getElementById("email")
+        .value
+        .trim()
+        .toLowerCase();
 
 
-            const phone =
-                document
-                .getElementById("phone")
-                .value
-                .trim();
+        const phone =
+        document
+        .getElementById("phone")
+        .value
+        .trim();
 
 
-            const instagram =
-                document
-                .getElementById("instagram")
-                .value
-                .trim();
+        const instagram =
+        document
+        .getElementById("instagram")
+        .value
+        .trim();
 
 
-            const date =
-                dateInput.value;
+        const date =
+        dateInput.value;
 
 
-            const time =
-                timeInput.value;
+        const time =
+        timeInput.value;
 
 
-            const nailLength =
-                nailLengthInput.value;
+        const nailLength =
+        nailLengthInput.value;
 
 
-            const inspiration =
-                document
-                .getElementById("inspiration")
-                .value
-                .trim();
+        const inspiration =
+        document
+        .getElementById("inspiration")
+        .value
+        .trim();
 
 
-            if (!date) {
+        if (!date) {
 
-                message.textContent =
-                    "Please select a date.";
+            message.textContent =
+            "Please select a date.";
 
-                message.className =
-                    "error";
+            message.className =
+            "error";
 
-                return;
+            return;
+
+        }
+
+
+        if (
+            isDateBlocked(date)
+        ) {
+
+            message.textContent =
+            "This date is unavailable.";
+
+            message.className =
+            "error";
+
+            return;
+
+        }
+
+
+        if (!time) {
+
+            message.textContent =
+            "Please select an available time.";
+
+            message.className =
+            "error";
+
+            return;
+
+        }
+
+
+        const availability =
+        await checkTimeAvailability(
+            date,
+            time
+        );
+
+
+        if (
+            !availability.available
+        ) {
+
+            message.textContent =
+            availability.reason;
+
+            message.className =
+            "error";
+
+            await loadBookedTimes(
+                date
+            );
+
+            return;
+
+        }
+
+
+        if (!nailLength) {
+
+            message.textContent =
+            "Please select a nail length.";
+
+            message.className =
+            "error";
+
+            return;
+
+        }
+
+
+        const selectedDesigns =
+        Array.from(
+            document.querySelectorAll(
+                'input[name="design"]:checked'
+            )
+        )
+        .map(
+            function(design) {
+
+                return design.value;
 
             }
+        );
 
 
-            if (isDateBlocked(date)) {
-
-                message.textContent =
-                    "This date is unavailable.";
-
-                message.className =
-                    "error";
-
-                return;
-
-            }
+        const total =
+        calculateTotal();
 
 
-            if (!time) {
+        message.textContent =
+        "Submitting your booking...";
 
-                message.textContent =
-                    "Please select an available time.";
-
-                message.className =
-                    "error";
-
-                return;
-
-            }
+        message.className =
+        "loading";
 
 
-            const availability =
-                await checkTimeAvailability(
-                    date,
-                    time
-                );
+        const booking = {
+
+            name: name,
+
+            email: email,
+
+            phone: phone,
+
+            date: date,
+
+            time: time,
+
+            nail_length:
+            nailLength,
+
+            designs:
+            selectedDesigns.length
+            ? selectedDesigns.join(", ")
+            : "None",
+
+            instagram:
+            instagram,
+
+            inspiration:
+            inspiration,
+
+            total:
+            total,
+
+            status:
+            "Pending Deposit"
+
+        };
+
+
+        const result =
+        await supabaseClient
+        .from("bookings")
+        .insert([
+            booking
+        ]);
+
+
+        if (result.error) {
+
+            console.error(
+                "Booking error:",
+                result.error
+            );
+
+            message.textContent =
+            "Something went wrong: " +
+            result.error.message;
+
+            message.className =
+            "error";
+
+            return;
+
+        }
+
+
+        message.textContent =
+        "Booking submitted! 💗 Sending confirmation...";
+
+        message.className =
+        "loading";
+
+
+        try {
+
+            const emailResponse =
+            await supabaseClient.functions.invoke(
+                "send-booking-email",
+                {
+                    body: booking
+                }
+            );
 
 
             if (
-                !availability.available
+                emailResponse.error
             ) {
 
                 message.textContent =
-                    availability.reason;
-
-                message.className =
-                    "error";
-
-
-                await loadBookedTimes(
-                    date
-                );
-
-                return;
+                "Booking submitted! 💗 Please send the $15 deposit to $Jamiiamariee1 to secure your appointment.";
 
             }
 
-
-            if (!nailLength) {
+            else {
 
                 message.textContent =
-                    "Please select a nail length.";
-
-                message.className =
-                    "error";
-
-                return;
+                "Booking submitted! 💗 A confirmation email has been sent. Please send the $15 deposit to $Jamiiamariee1 to secure your appointment.";
 
             }
-
-
-            const selectedDesigns =
-                Array.from(
-                    document.querySelectorAll(
-                        'input[name="design"]:checked'
-                    )
-                )
-                .map(
-                    function(design) {
-
-                        return design.value;
-
-                    }
-                );
-
-
-            const total =
-                calculateTotal();
-
-
-            message.textContent =
-                "Submitting your booking...";
 
             message.className =
-                "loading";
-
-
-            const booking = {
-
-                name: name,
-
-                email: email,
-
-                phone: phone,
-
-                date: date,
-
-                time: time,
-
-                nail_length:
-                    nailLength,
-
-                designs:
-                    selectedDesigns.length
-                        ? selectedDesigns.join(
-                            ", "
-                        )
-                        : "None",
-
-                instagram:
-                    instagram,
-
-                inspiration:
-                    inspiration,
-
-                total:
-                    total,
-
-                status:
-                    "Pending Deposit"
-
-            };
-
-
-            const result =
-                await supabaseClient
-                .from("bookings")
-                .insert([
-                    booking
-                ]);
-
-
-            if (result.error) {
-
-                console.error(
-                    "Booking error:",
-                    result.error
-                );
-
-
-                message.textContent =
-                    "Something went wrong: " +
-                    result.error.message;
-
-                message.className =
-                    "error";
-
-                return;
-
-            }
-
-
-            message.textContent =
-                "Booking submitted! 💗 Sending confirmation...";
-
-            message.className =
-                "loading";
-
-
-            try {
-
-                const emailResponse =
-                    await supabaseClient.functions.invoke(
-                        "send-booking-email",
-                        {
-                            body:
-                                booking
-                        }
-                    );
-
-
-                if (
-                    emailResponse.error
-                ) {
-
-                    message.textContent =
-                        "Booking submitted! 💗 Please send the $15 deposit to $Jamiiamariee1 to secure your appointment.";
-
-                }
-
-                else {
-
-                    message.textContent =
-                        "Booking submitted! 💗 A confirmation email has been sent. Please send the $15 deposit to $Jamiiamariee1 to secure your appointment.";
-
-                }
-
-
-                message.className =
-                    "success";
-
-            }
-
-            catch (error) {
-
-                console.error(
-                    error
-                );
-
-
-                message.textContent =
-                    "Booking submitted! 💗 Please send the $15 deposit to $Jamiiamariee1 to secure your appointment.";
-
-                message.className =
-                    "success";
-
-            }
-
-
-            bookingForm.reset();
-
-
-            basePriceDisplay.textContent =
-                "$0.00";
-
-
-            addonTotalDisplay.textContent =
-                "$0.00";
-
-
-            totalDisplay.textContent =
-                "$0.00";
-
-
-            resetTimeOptions();
-
-
-            bookedTimes = [];
+            "success";
 
         }
-    );
 
-}
+        catch (error) {
+
+            console.error(error);
+
+            message.textContent =
+            "Booking submitted! 💗 Please send the $15 deposit to $Jamiiamariee1 to secure your appointment.";
+
+            message.className =
+            "success";
+
+        }
+
+
+        bookingForm.reset();
+
+
+        basePriceDisplay.textContent =
+        "$0.00";
+
+
+        addonTotalDisplay.textContent =
+        "$0.00";
+
+
+        totalDisplay.textContent =
+        "$0.00";
+
+
+        resetTimeOptions();
+
+        bookedTimes = [];
+
+    }
+);
 
 
 // ======================================================
@@ -1168,51 +1078,63 @@ if (bookingForm) {
 
 
 // ======================================================
-// FIND CUSTOMER APPOINTMENT
+// FIND APPOINTMENT
 // ======================================================
 
 async function findMyAppointment() {
 
-    const email =
-        document
-        .getElementById("manageEmail")
-        .value
-        .trim()
-        .toLowerCase();
+    const emailInput =
+    document.getElementById(
+        "manageEmail"
+    );
 
 
-    const date =
-        document
-        .getElementById("manageDate")
-        .value;
+    const dateInputManage =
+    document.getElementById(
+        "manageDate"
+    );
 
 
     const manageMessage =
-        document.getElementById(
-            "manageMessage"
-        );
+    document.getElementById(
+        "manageMessage"
+    );
 
 
     const resultDiv =
-        document.getElementById(
-            "appointmentResult"
-        );
+    document.getElementById(
+        "appointmentResult"
+    );
 
 
-    manageMessage.textContent = "";
+    const email =
+    emailInput
+    .value
+    .trim()
+    .toLowerCase();
 
-    manageMessage.className = "";
 
-    resultDiv.innerHTML = "";
+    const date =
+    dateInputManage.value;
+
+
+    manageMessage.textContent =
+    "";
+
+    manageMessage.className =
+    "";
+
+    resultDiv.innerHTML =
+    "";
 
 
     if (!email || !date) {
 
         manageMessage.textContent =
-            "Please enter your email and appointment date.";
+        "Please enter your email and appointment date.";
 
         manageMessage.className =
-            "error";
+        "error";
 
         return;
 
@@ -1220,93 +1142,85 @@ async function findMyAppointment() {
 
 
     manageMessage.textContent =
-        "Looking for your appointment...";
+    "Looking for your appointment...";
 
     manageMessage.className =
-        "loading";
+    "loading";
 
 
-    try {
-
-        const result =
-            await supabaseClient.rpc(
-                "find_customer_booking",
-                {
-                    customer_email:
-                        email,
-
-                    appointment_date:
-                        date
-                }
-            );
+    const result =
+    await supabaseClient
+    .from("bookings")
+    .select("*")
+    .ilike("email", email)
+    .eq("date", date)
+    .neq("status", "Cancelled");
 
 
-        if (result.error) {
-
-            console.error(
-                "Find appointment error:",
-                result.error
-            );
-
-
-            manageMessage.textContent =
-                "Could not find your appointment. Please try again.";
-
-            manageMessage.className =
-                "error";
-
-            return;
-
-        }
-
-
-        if (
-            !result.data ||
-            result.data.length === 0
-        ) {
-
-            manageMessage.textContent =
-                "No active appointment was found with that email and date.";
-
-            manageMessage.className =
-                "error";
-
-            return;
-
-        }
-
-
-        currentCustomerBooking =
-            result.data[0];
-
-
-        manageMessage.textContent =
-            "Appointment found! 💗";
-
-        manageMessage.className =
-            "success";
-
-
-        renderCustomerAppointment(
-            currentCustomerBooking
-        );
-
-    }
-
-    catch (error) {
+    if (result.error) {
 
         console.error(
-            error
+            "Find appointment error:",
+            result.error
         );
 
-
         manageMessage.textContent =
-            "Something went wrong. Please try again.";
+        "Could not find your appointment. " +
+        result.error.message;
 
         manageMessage.className =
-            "error";
+        "error";
+
+        return;
 
     }
+
+
+    if (
+        !result.data ||
+        result.data.length === 0
+    ) {
+
+        manageMessage.textContent =
+        "No active appointment was found with that email and date.";
+
+        manageMessage.className =
+        "error";
+
+        return;
+
+    }
+
+
+    if (
+        result.data.length > 1
+    ) {
+
+        manageMessage.textContent =
+        "Multiple appointments were found. Please contact me directly to manage them.";
+
+        manageMessage.className =
+        "error";
+
+        return;
+
+    }
+
+
+    currentCustomerBooking =
+    result.data[0];
+
+
+    manageMessage.textContent =
+    "Appointment found! 💗";
+
+    manageMessage.className =
+    "success";
+
+
+    renderCustomerAppointment(
+        currentCustomerBooking
+    );
 
 }
 
@@ -1320,21 +1234,21 @@ function renderCustomerAppointment(
 ) {
 
     const resultDiv =
-        document.getElementById(
-            "appointmentResult"
-        );
+    document.getElementById(
+        "appointmentResult"
+    );
 
 
     const formattedDate =
-        formatCustomerDate(
-            booking.date
-        );
+    formatCustomerDate(
+        booking.date
+    );
 
 
     const formattedTime =
-        formatCustomerTime(
-            booking.time
-        );
+    formatCustomerTime(
+        booking.time
+    );
 
 
     resultDiv.innerHTML = `
@@ -1345,11 +1259,10 @@ function renderCustomerAppointment(
                 Your Appointment
             </h3>
 
-
             <span class="appointment-status ${
                 booking.status === "Confirmed"
-                    ? "confirmed"
-                    : ""
+                ? "confirmed"
+                : ""
             }">
 
                 ${escapeHTML(
@@ -1358,7 +1271,6 @@ function renderCustomerAppointment(
 
             </span>
 
-
             <p>
                 <strong>Name:</strong>
                 ${escapeHTML(
@@ -1366,27 +1278,15 @@ function renderCustomerAppointment(
                 )}
             </p>
 
-
             <p>
                 <strong>Date:</strong>
                 ${formattedDate}
             </p>
 
-
             <p>
                 <strong>Time:</strong>
                 ${formattedTime}
             </p>
-
-
-            <p>
-                <strong>Nail Length:</strong>
-                ${escapeHTML(
-                    booking.nail_length ||
-                    "Not provided"
-                )}
-            </p>
-
 
             <p>
                 <strong>Total:</strong>
@@ -1395,7 +1295,6 @@ function renderCustomerAppointment(
                 ).toFixed(2)}
             </p>
 
-
             <div class="manage-actions">
 
                 <button
@@ -1403,16 +1302,19 @@ function renderCustomerAppointment(
                     class="btn reschedule-appointment-button"
                     onclick="showRescheduleArea()"
                 >
-                    📅 Reschedule
-                </button>
 
+                    📅 Reschedule
+
+                </button>
 
                 <button
                     type="button"
                     class="btn cancel-appointment-button"
                     onclick="cancelCustomerAppointment()"
                 >
+
                     ❌ Cancel Appointment
+
                 </button>
 
             </div>
@@ -1438,25 +1340,25 @@ function showRescheduleArea() {
 
 
     const area =
-        document.getElementById(
-            "rescheduleArea"
-        );
+    document.getElementById(
+        "rescheduleArea"
+    );
 
 
     area.style.display =
-        "block";
+    "block";
 
 
     const today =
-        new Date()
-        .toISOString()
-        .split("T")[0];
+    new Date()
+    .toISOString()
+    .split("T")[0];
 
 
     document.getElementById(
         "newDate"
     ).min =
-        today;
+    today;
 
 
     area.scrollIntoView({
@@ -1468,195 +1370,172 @@ function showRescheduleArea() {
 
 
 // ======================================================
-// LOAD NEW RESCHEDULE TIMES
+// NEW RESCHEDULE DATE
 // ======================================================
 
-const newDateElement =
-document.getElementById(
-    "newDate"
-);
+document
+.getElementById("newDate")
+.addEventListener(
+    "change",
+    async function() {
+
+        const newDate =
+        this.value;
 
 
-if (newDateElement) {
-
-    newDateElement.addEventListener(
-        "change",
-        async function() {
-
-            const newDate =
-                this.value;
+        const newTime =
+        document.getElementById(
+            "newTime"
+        );
 
 
-            const newTime =
-                document.getElementById(
-                    "newTime"
-                );
+        if (!newDate) {
 
-
-            if (!newDate) {
-
-                newTime.innerHTML = `
-                    <option value="">
-                        Select a date first
-                    </option>
-                `;
-
-                return;
-
-            }
-
-
-            if (
-                isDateBlocked(
-                    newDate
-                )
-            ) {
-
-                newTime.innerHTML = `
-                    <option value="">
-                        Date unavailable
-                    </option>
-                `;
-
-                return;
-
-            }
-
-
-            newTime.innerHTML = `
+            newTime.innerHTML =
+            `
                 <option value="">
-                    Checking availability...
+                    Select a date first
                 </option>
             `;
 
-
-            /*
-             * Check bookings for the new date.
-             *
-             * This requires your Supabase RLS
-             * to allow the availability query.
-             */
-
-            const result =
-                await supabaseClient
-                .from("bookings")
-                .select(
-                    "id,time,status"
-                )
-                .eq(
-                    "date",
-                    newDate
-                );
-
-
-            if (result.error) {
-
-                console.error(
-                    "Reschedule availability error:",
-                    result.error
-                );
-
-
-                newTime.innerHTML = `
-                    <option value="">
-                        Could not check availability
-                    </option>
-                `;
-
-                return;
-
-            }
-
-
-            const unavailableTimes =
-                (result.data || [])
-                .filter(
-                    function(booking) {
-
-                        return (
-
-                            booking.status !==
-                            "Cancelled"
-
-                            &&
-
-                            String(
-                                booking.id
-                            ) !==
-                            String(
-                                currentCustomerBooking.id
-                            )
-
-                        );
-
-                    }
-                )
-                .map(
-                    function(booking) {
-
-                        return normalizeTime(
-                            booking.time
-                        );
-
-                    }
-                );
-
-
-            newTime.innerHTML = `
-                <option value="">
-                    Select a new time
-                </option>
-            `;
-
-
-            appointmentTimes.forEach(
-                function(time) {
-
-                    const option =
-                        document.createElement(
-                            "option"
-                        );
-
-
-                    option.value =
-                        time.value;
-
-
-                    if (
-                        unavailableTimes.includes(
-                            time.value
-                        )
-                    ) {
-
-                        option.textContent =
-                            time.label +
-                            " — BOOKED";
-
-                        option.disabled =
-                            true;
-
-                    }
-
-                    else {
-
-                        option.textContent =
-                            time.label +
-                            " — Available";
-
-                    }
-
-
-                    newTime.appendChild(
-                        option
-                    );
-
-                }
-            );
+            return;
 
         }
-    );
 
-}
+
+        if (
+            isDateBlocked(newDate)
+        ) {
+
+            newTime.innerHTML =
+            `
+                <option value="">
+                    Date unavailable
+                </option>
+            `;
+
+            return;
+
+        }
+
+
+        newTime.innerHTML =
+        `
+            <option value="">
+                Checking availability...
+            </option>
+        `;
+
+
+        const result =
+        await supabaseClient
+        .from("bookings")
+        .select(
+            "time,status,id"
+        )
+        .eq(
+            "date",
+            newDate
+        );
+
+
+        if (result.error) {
+
+            newTime.innerHTML =
+            `
+                <option value="">
+                    Could not check availability
+                </option>
+            `;
+
+            return;
+
+        }
+
+
+        const unavailableTimes =
+        (result.data || [])
+        .filter(
+            function(booking) {
+
+                return (
+                    booking.status !==
+                    "Cancelled" &&
+                    String(
+                        booking.id
+                    ) !==
+                    String(
+                        currentCustomerBooking.id
+                    )
+                );
+
+            }
+        )
+        .map(
+            function(booking) {
+
+                return normalizeTime(
+                    booking.time
+                );
+
+            }
+        );
+
+
+        newTime.innerHTML =
+        `
+            <option value="">
+                Select a new time
+            </option>
+        `;
+
+
+        appointmentTimes.forEach(
+            function(time) {
+
+                const option =
+                document.createElement(
+                    "option"
+                );
+
+
+                option.value =
+                time.value;
+
+
+                if (
+                    unavailableTimes.includes(
+                        time.value
+                    )
+                ) {
+
+                    option.textContent =
+                    time.label +
+                    " — BOOKED";
+
+                    option.disabled =
+                    true;
+
+                }
+
+                else {
+
+                    option.textContent =
+                    time.label +
+                    " — Available";
+
+                }
+
+
+                newTime.appendChild(
+                    option
+                );
+
+            }
+        );
+
+    }
+);
 
 
 // ======================================================
@@ -1673,30 +1552,30 @@ async function rescheduleAppointment() {
 
 
     const newDate =
-        document
-        .getElementById("newDate")
-        .value;
+    document
+    .getElementById("newDate")
+    .value;
 
 
     const newTime =
-        document
-        .getElementById("newTime")
-        .value;
+    document
+    .getElementById("newTime")
+    .value;
 
 
     const manageMessage =
-        document.getElementById(
-            "manageMessage"
-        );
+    document.getElementById(
+        "manageMessage"
+    );
 
 
     if (!newDate || !newTime) {
 
         manageMessage.textContent =
-            "Please choose a new date and time.";
+        "Please choose a new date and time.";
 
         manageMessage.className =
-            "error";
+        "error";
 
         return;
 
@@ -1704,16 +1583,44 @@ async function rescheduleAppointment() {
 
 
     if (
-        isDateBlocked(
-            newDate
-        )
+        isDateBlocked(newDate)
     ) {
 
         manageMessage.textContent =
-            "That date is unavailable.";
+        "That date is unavailable.";
 
         manageMessage.className =
-            "error";
+        "error";
+
+        return;
+
+    }
+
+
+    manageMessage.textContent =
+    "Checking availability...";
+
+    manageMessage.className =
+    "loading";
+
+
+    const availability =
+    await checkCustomerRescheduleAvailability(
+        newDate,
+        newTime,
+        currentCustomerBooking.id
+    );
+
+
+    if (
+        !availability.available
+    ) {
+
+        manageMessage.textContent =
+        availability.reason;
+
+        manageMessage.className =
+        "error";
 
         return;
 
@@ -1721,13 +1628,17 @@ async function rescheduleAppointment() {
 
 
     const confirmed =
-        confirm(
-            "Are you sure you want to reschedule your appointment to " +
-            formatCustomerDate(newDate) +
-            " at " +
-            formatCustomerTime(newTime) +
-            "?"
-        );
+    confirm(
+        "Are you sure you want to reschedule your appointment to " +
+        formatCustomerDate(
+            newDate
+        ) +
+        " at " +
+        formatCustomerTime(
+            newTime
+        ) +
+        "?"
+    );
 
 
     if (!confirmed) {
@@ -1738,150 +1649,198 @@ async function rescheduleAppointment() {
 
 
     manageMessage.textContent =
-        "Rescheduling appointment...";
+    "Rescheduling appointment...";
 
     manageMessage.className =
-        "loading";
+    "loading";
+
+
+    const result =
+    await supabaseClient
+    .from("bookings")
+    .update({
+
+        date:
+        newDate,
+
+        time:
+        newTime,
+
+        updated_at:
+        new Date().toISOString()
+
+    })
+    .eq(
+        "id",
+        currentCustomerBooking.id
+    );
+
+
+    if (result.error) {
+
+        console.error(
+            "Reschedule error:",
+            result.error
+        );
+
+        manageMessage.textContent =
+        "Could not reschedule your appointment: " +
+        result.error.message;
+
+        manageMessage.className =
+        "error";
+
+        return;
+
+    }
+
+
+    currentCustomerBooking.date =
+    newDate;
+
+    currentCustomerBooking.time =
+    newTime;
+
+
+    document.getElementById(
+        "rescheduleArea"
+    ).style.display =
+    "none";
+
+
+    manageMessage.textContent =
+    "Appointment successfully rescheduled! 💗";
+
+    manageMessage.className =
+    "success";
+
+
+    renderCustomerAppointment(
+        currentCustomerBooking
+    );
 
 
     try {
 
-        const result =
-            await supabaseClient.rpc(
-                "reschedule_customer_booking",
-                {
-                    booking_id:
-                        currentCustomerBooking.id,
+        await supabaseClient.functions.invoke(
+            "send-status-email",
+            {
+                body: {
 
-                    new_date:
-                        newDate,
+                    name:
+                    currentCustomerBooking.name,
 
-                    new_time:
-                        newTime
+                    email:
+                    currentCustomerBooking.email,
+
+                    status:
+                    "Rescheduled",
+
+                    date:
+                    newDate,
+
+                    time:
+                    newTime
+
                 }
-            );
-
-
-        if (result.error) {
-
-            console.error(
-                "Reschedule error:",
-                result.error
-            );
-
-
-            manageMessage.textContent =
-                result.error.message ||
-                "Could not reschedule your appointment.";
-
-            manageMessage.className =
-                "error";
-
-            return;
-
-        }
-
-
-        /*
-         * SECURITY DEFINER function returns
-         * one booking row.
-         */
-
-        if (!result.data) {
-
-            manageMessage.textContent =
-                "Could not reschedule your appointment.";
-
-            manageMessage.className =
-                "error";
-
-            return;
-
-        }
-
-
-        currentCustomerBooking =
-            Array.isArray(
-                result.data
-            )
-            ? result.data[0]
-            : result.data;
-
-
-        document.getElementById(
-            "rescheduleArea"
-        ).style.display =
-            "none";
-
-
-        manageMessage.textContent =
-            "Appointment successfully rescheduled! 💗";
-
-        manageMessage.className =
-            "success";
-
-
-        renderCustomerAppointment(
-            currentCustomerBooking
+            }
         );
-
-
-        // Send reschedule email
-
-        try {
-
-            await supabaseClient.functions.invoke(
-                "send-status-email",
-                {
-                    body: {
-
-                        name:
-                            currentCustomerBooking.name,
-
-                        email:
-                            currentCustomerBooking.email,
-
-                        status:
-                            "Rescheduled",
-
-                        date:
-                            currentCustomerBooking.date,
-
-                        time:
-                            currentCustomerBooking.time
-
-                    }
-                }
-            );
-
-        }
-
-        catch (emailError) {
-
-            console.error(
-                "Reschedule email error:",
-                emailError
-            );
-
-        }
 
     }
 
     catch (error) {
 
         console.error(
-            "Reschedule error:",
+            "Reschedule email error:",
             error
         );
 
+    }
 
-        manageMessage.textContent =
-            "Something went wrong while rescheduling.";
+}
 
-        manageMessage.className =
-            "error";
+
+// ======================================================
+// CHECK RESCHEDULE AVAILABILITY
+// ======================================================
+
+async function checkCustomerRescheduleAvailability(
+    date,
+    time,
+    currentBookingId
+) {
+
+    const result =
+    await supabaseClient
+    .from("bookings")
+    .select(
+        "id,status"
+    )
+    .eq(
+        "date",
+        date
+    )
+    .eq(
+        "time",
+        time
+    );
+
+
+    if (result.error) {
+
+        return {
+
+            available: false,
+
+            reason:
+            "Could not check that appointment time."
+
+        };
 
     }
+
+
+    const activeBooking =
+    (result.data || [])
+    .find(
+        function(booking) {
+
+            return (
+                booking.status !==
+                "Cancelled" &&
+                String(
+                    booking.id
+                ) !==
+                String(
+                    currentBookingId
+                )
+            );
+
+        }
+    );
+
+
+    if (activeBooking) {
+
+        return {
+
+            available: false,
+
+            reason:
+            "That time is already booked. Please choose another time."
+
+        };
+
+    }
+
+
+    return {
+
+        available: true,
+
+        reason: ""
+
+    };
 
 }
 
@@ -1900,10 +1859,10 @@ async function cancelCustomerAppointment() {
 
 
     const confirmed =
-        confirm(
-            "Are you sure you want to cancel your appointment?\n\n" +
-            "This cannot be undone from the customer side."
-        );
+    confirm(
+        "Are you sure you want to cancel your appointment?\n\n" +
+        "This cannot be undone from the customer side."
+    );
 
 
     if (!confirmed) {
@@ -1914,169 +1873,133 @@ async function cancelCustomerAppointment() {
 
 
     const manageMessage =
-        document.getElementById(
-            "manageMessage"
-        );
+    document.getElementById(
+        "manageMessage"
+    );
 
 
     manageMessage.textContent =
-        "Cancelling appointment...";
+    "Cancelling appointment...";
 
     manageMessage.className =
-        "loading";
+    "loading";
+
+
+    const result =
+    await supabaseClient
+    .from("bookings")
+    .update({
+
+        status:
+        "Cancelled",
+
+        updated_at:
+        new Date().toISOString()
+
+    })
+    .eq(
+        "id",
+        currentCustomerBooking.id
+    );
+
+
+    if (result.error) {
+
+        console.error(
+            "Cancel appointment error:",
+            result.error
+        );
+
+        manageMessage.textContent =
+        "Could not cancel your appointment: " +
+        result.error.message;
+
+        manageMessage.className =
+        "error";
+
+        return;
+
+    }
+
+
+    currentCustomerBooking.status =
+    "Cancelled";
+
+
+    document.getElementById(
+        "appointmentResult"
+    ).innerHTML = `
+
+        <div class="appointment-card">
+
+            <h3>
+                Appointment Cancelled
+            </h3>
+
+            <span class="appointment-status cancelled">
+                Cancelled
+            </span>
+
+            <p>
+                Your appointment has been cancelled.
+            </p>
+
+            <p>
+                The appointment time is now available for someone else to book.
+            </p>
+
+        </div>
+
+    `;
+
+
+    document.getElementById(
+        "rescheduleArea"
+    ).style.display =
+    "none";
+
+
+    manageMessage.textContent =
+    "Your appointment has been cancelled successfully. 💗";
+
+    manageMessage.className =
+    "success";
 
 
     try {
 
-        const result =
-            await supabaseClient.rpc(
-                "cancel_customer_booking",
-                {
-                    booking_id:
-                        currentCustomerBooking.id
+        await supabaseClient.functions.invoke(
+            "send-status-email",
+            {
+                body: {
+
+                    name:
+                    currentCustomerBooking.name,
+
+                    email:
+                    currentCustomerBooking.email,
+
+                    status:
+                    "Cancelled",
+
+                    date:
+                    currentCustomerBooking.date,
+
+                    time:
+                    currentCustomerBooking.time
+
                 }
-            );
-
-
-        if (result.error) {
-
-            console.error(
-                "Cancel appointment error:",
-                result.error
-            );
-
-
-            manageMessage.textContent =
-                result.error.message ||
-                "Could not cancel your appointment.";
-
-            manageMessage.className =
-                "error";
-
-            return;
-
-        }
-
-
-        if (!result.data) {
-
-            manageMessage.textContent =
-                "Could not cancel your appointment.";
-
-            manageMessage.className =
-                "error";
-
-            return;
-
-        }
-
-
-        currentCustomerBooking =
-            Array.isArray(
-                result.data
-            )
-            ? result.data[0]
-            : result.data;
-
-
-        document.getElementById(
-            "appointmentResult"
-        ).innerHTML = `
-
-            <div class="appointment-card">
-
-                <h3>
-                    Appointment Cancelled
-                </h3>
-
-
-                <span class="appointment-status cancelled">
-                    Cancelled
-                </span>
-
-
-                <p>
-                    Your appointment has been cancelled.
-                </p>
-
-
-                <p>
-                    The appointment time is now available
-                    for someone else to book.
-                </p>
-
-            </div>
-
-        `;
-
-
-        document.getElementById(
-            "rescheduleArea"
-        ).style.display =
-            "none";
-
-
-        manageMessage.textContent =
-            "Your appointment has been cancelled successfully. 💗";
-
-        manageMessage.className =
-            "success";
-
-
-        // Send cancellation email
-
-        try {
-
-            await supabaseClient.functions.invoke(
-                "send-status-email",
-                {
-                    body: {
-
-                        name:
-                            currentCustomerBooking.name,
-
-                        email:
-                            currentCustomerBooking.email,
-
-                        status:
-                            "Cancelled",
-
-                        date:
-                            currentCustomerBooking.date,
-
-                        time:
-                            currentCustomerBooking.time
-
-                    }
-                }
-            );
-
-        }
-
-        catch (emailError) {
-
-            console.error(
-                "Cancellation email error:",
-                emailError
-            );
-
-        }
+            }
+        );
 
     }
 
     catch (error) {
 
         console.error(
-            "Cancellation error:",
+            "Cancellation email error:",
             error
         );
-
-
-        manageMessage.textContent =
-            "Something went wrong while cancelling.";
-
-        manageMessage.className =
-            "error";
 
     }
 
@@ -2099,7 +2022,7 @@ function formatCustomerDate(
 
 
     const parts =
-        String(date).split("-");
+    date.split("-");
 
 
     if (
@@ -2138,30 +2061,30 @@ function formatCustomerTime(
 
 
     const parts =
-        String(time).split(":");
+    String(time).split(":");
 
 
     let hour =
-        parseInt(
-            parts[0],
-            10
-        );
+    parseInt(
+        parts[0],
+        10
+    );
 
 
     const minutes =
-        parts[1] ||
-        "00";
+    parts[1] ||
+    "00";
 
 
     const ampm =
-        hour >= 12
-            ? "PM"
-            : "AM";
+    hour >= 12
+    ? "PM"
+    : "AM";
 
 
     hour =
-        hour % 12 ||
-        12;
+    hour % 12 ||
+    12;
 
 
     return (
@@ -2195,40 +2118,29 @@ function escapeHTML(
 
     return String(value)
 
-        .replace(
-            /&/g,
-            "&amp;"
-        )
+    .replace(
+        /&/g,
+        "&amp;"
+    )
 
-        .replace(
-            /</g,
-            "&lt;"
-        )
+    .replace(
+        /</g,
+        "&lt;"
+    )
 
-        .replace(
-            />/g,
-            "&gt;"
-        )
+    .replace(
+        />/g,
+        "&gt;"
+    )
 
-        .replace(
-            /"/g,
-            "&quot;"
-        )
+    .replace(
+        /"/g,
+        "&quot;"
+    )
 
-        .replace(
-            /'/g,
-            "&#039;"
-        );
+    .replace(
+        /'/g,
+        "&#039;"
+    );
 
 }
-
-
-// ======================================================
-// INITIAL LOAD
-// ======================================================
-
-loadBlockedDates();
-
-resetTimeOptions();
-
-calculateTotal();
