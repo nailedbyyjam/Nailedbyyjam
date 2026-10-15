@@ -678,6 +678,235 @@ async function unblockTime(block){
 byId("timeBlockDate").addEventListener("change",loadBlockedTimes);
 populateTimeOptions();
 checkLogin();
+
+/* ==========================================
+   BUSINESS HOURS ADMIN CONTROLS
+========================================== */
+
+const businessDayNames = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday"
+];
+
+async function loadBusinessHours() {
+  const editor = document.getElementById("businessHoursEditor");
+
+  if (!editor) return;
+
+  editor.textContent = "Loading business hours...";
+
+  const { data, error } = await supabaseClient
+    .from("business_hours")
+    .select("*")
+    .order("weekday");
+
+  if (error) {
+    editor.textContent = "Could not load business hours: " + error.message;
+    return;
+  }
+
+  const hoursByDay = {};
+
+  (data || []).forEach(day => {
+    hoursByDay[day.weekday] = day;
+  });
+
+  editor.innerHTML = businessDayNames.map((dayName, dayIndex) => {
+    const day = hoursByDay[dayIndex] || {
+      is_open: false,
+      open_time: "09:00:00",
+      close_time: "19:00:00"
+    };
+
+    const openTime = String(day.open_time || "09:00").slice(0, 5);
+    const closeTime = String(day.close_time || "19:00").slice(0, 5);
+
+    return `
+      <div style="
+        padding:14px;
+        margin:10px 0;
+        border:1px solid #f3c2d8;
+        border-radius:12px;
+        background:#fffafd;
+      ">
+        <strong>${dayName}</strong>
+
+        <p>
+          <label>
+            <input
+              type="checkbox"
+              id="businessOpen${dayIndex}"
+              ${day.is_open ? "checked" : ""}
+            >
+            Open for appointments
+          </label>
+        </p>
+
+        <p>
+          Opening:
+          <input
+            type="time"
+            id="businessStart${dayIndex}"
+            value="${openTime}"
+          >
+        </p>
+
+        <p>
+          Closing:
+          <input
+            type="time"
+            id="businessEnd${dayIndex}"
+            value="${closeTime}"
+          >
+        </p>
+      </div>
+    `;
+  }).join("");
+}
+
+async function saveBusinessHours() {
+  const message = document.getElementById("businessHoursMessage");
+  const rows = [];
+
+  for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+    const isOpen = document.getElementById("businessOpen" + dayIndex).checked;
+    const openTime = document.getElementById("businessStart" + dayIndex).value;
+    const closeTime = document.getElementById("businessEnd" + dayIndex).value;
+
+    if (isOpen && (!openTime || !closeTime || openTime >= closeTime)) {
+      message.textContent = "Please check the opening and closing times for " +
+        businessDayNames[dayIndex] + ".";
+      message.style.color = "#d00000";
+      return;
+    }
+
+    rows.push({
+      weekday: dayIndex,
+      day_name: businessDayNames[dayIndex],
+      is_open: isOpen,
+      open_time: openTime || "09:00",
+      close_time: closeTime || "19:00",
+      updated_at: new Date().toISOString()
+    });
+  }
+
+  message.textContent = "Saving...";
+  message.style.color = "#777";
+
+  const { error } = await supabaseClient
+    .from("business_hours")
+    .upsert(rows, { onConflict: "weekday" });
+
+  if (error) {
+    message.textContent = "Could not save hours: " + error.message;
+    message.style.color = "#d00000";
+    return;
+  }
+
+  message.textContent = "Weekly business hours saved! 💗";
+  message.style.color = "#25833a";
+}
+
+function updateSpecialHoursDate() {
+  const output = document.getElementById("specialHoursSelectedDate");
+
+  if (output) {
+    output.textContent = selectedDate
+      ? "Selected date: " + formatDate(selectedDate)
+      : "Select a date in the calendar first.";
+  }
+}
+
+async function saveSpecialHours() {
+  const message = document.getElementById("specialHoursMessage");
+
+  if (!selectedDate) {
+    message.textContent = "Select a date in the availability calendar first.";
+    message.style.color = "#d00000";
+    return;
+  }
+
+  const isOpen = document.getElementById("specialDayOpen").value === "open";
+  const openTime = document.getElementById("specialOpenTime").value;
+  const closeTime = document.getElementById("specialCloseTime").value;
+  const note = document.getElementById("specialHoursNote").value.trim();
+
+  if (isOpen && (!openTime || !closeTime || openTime >= closeTime)) {
+    message.textContent = "Please choose a valid opening and closing time.";
+    message.style.color = "#d00000";
+    return;
+  }
+
+  const { error } = await supabaseClient
+    .from("business_hour_overrides")
+    .upsert({
+      date: selectedDate,
+      is_open: isOpen,
+      open_time: isOpen ? openTime : null,
+      close_time: isOpen ? closeTime : null,
+      note: note || null,
+      updated_at: new Date().toISOString()
+    }, { onConflict: "date" });
+
+  if (error) {
+    message.textContent = "Could not save special hours: " + error.message;
+    message.style.color = "#d00000";
+    return;
+  }
+
+  message.textContent = isOpen
+    ? "Special hours saved for " + formatDate(selectedDate) + ". 💗"
+    : "This date is now marked closed. 💗";
+
+  message.style.color = "#25833a";
+}
+
+async function removeSpecialHours() {
+  const message = document.getElementById("specialHoursMessage");
+
+  if (!selectedDate) {
+    message.textContent = "Select a date in the availability calendar first.";
+    message.style.color = "#d00000";
+    return;
+  }
+
+  const { error } = await supabaseClient
+    .from("business_hour_overrides")
+    .delete()
+    .eq("date", selectedDate);
+
+  if (error) {
+    message.textContent = "Could not remove special hours: " + error.message;
+    message.style.color = "#d00000";
+    return;
+  }
+
+  message.textContent = "Regular weekly hours will apply to this date.";
+  message.style.color = "#25833a";
+}
+
+/* Update the special-hours date label when a calendar date is selected. */
+const originalSelectDateForHours = selectDate;
+
+selectDate = function(date) {
+  originalSelectDateForHours(date);
+  updateSpecialHoursDate();
+};
+
+/* Load the editor when the admin dashboard opens. */
+const originalShowAdminForHours = showAdmin;
+
+showAdmin = function() {
+  originalShowAdminForHours();
+  loadBusinessHours();
+  updateSpecialHoursDate();
+};
+
 </script>
 </body>
 </html>
