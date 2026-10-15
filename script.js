@@ -1607,3 +1607,409 @@ function escapeHTML(value) {
 // END OF SCRIPT
 // ======================================================
 
+/* ==========================================
+   CUSTOMER APPOINTMENT RESCHEDULING
+   Uses the existing index.html fields:
+   manageEmail, manageDate, manageMessage,
+   appointmentResult, rescheduleArea,
+   newDate, newTime
+========================================== */
+
+let customerAppointment = null;
+
+function customerDateString(date) {
+  return date.getFullYear() + "-" +
+    String(date.getMonth() + 1).padStart(2, "0") + "-" +
+    String(date.getDate()).padStart(2, "0");
+}
+
+function customerFormatDate(date) {
+  if (!date) return "Not provided";
+  const parts = String(date).split("-");
+  return parts.length === 3
+    ? parts[1] + "/" + parts[2] + "/" + parts[0]
+    : date;
+}
+
+function customerFormatTime(time) {
+  if (!time) return "Not provided";
+
+  const parts = String(time).split(":");
+  let hour = Number(parts[0]);
+  const minutes = parts[1] || "00";
+  const ampm = hour >= 12 ? "PM" : "AM";
+
+  hour = hour % 12 || 12;
+  return hour + ":" + minutes + " " + ampm;
+}
+
+function customerTimeMinutes(time) {
+  const parts = String(time || "").slice(0, 5).split(":");
+  return Number(parts[0]) * 60 + Number(parts[1] || 0);
+}
+
+function customerMessage(text, isError = false) {
+  const element = document.getElementById("manageMessage");
+  element.textContent = text;
+  element.style.color = isError ? "#c00000" : "#25833a";
+}
+
+function customerEscapeHTML(value) {
+  return String(value ?? "").replace(/[&<>"']/g, character => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#039;"
+  })[character]);
+}
+
+/* FIND APPOINTMENT */
+
+async function findMyAppointment() {
+  const email = document.getElementById("manageEmail").value.trim();
+  const date = document.getElementById("manageDate").value;
+  const result = document.getElementById("appointmentResult");
+  const rescheduleArea = document.getElementById("rescheduleArea");
+
+  result.innerHTML = "";
+  rescheduleArea.style.display = "none";
+  customerAppointment = null;
+
+  if (!email || !date) {
+    customerMessage("Enter your booking email and current appointment date.", true);
+    return;
+  }
+
+  customerMessage("Looking for your appointment...");
+
+  const { data, error } = await supabaseClient
+    .from("bookings")
+    .select("*")
+    .eq("email", email)
+    .eq("date", date)
+    .neq("status", "Cancelled")
+    .order("time", { ascending: true });
+
+  if (error) {
+    console.error("Find appointment error:", error);
+    customerMessage("Could not look up your appointment. Please try again.", true);
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    customerMessage("No active appointment found for that email and date.", true);
+    return;
+  }
+
+  if (data.length > 1) {
+    customerMessage(
+      "More than one appointment matches. Please contact the nail tech so the correct booking can be identified.",
+      true
+    );
+    return;
+  }
+
+  customerAppointment = data[0];
+
+  result.innerHTML = `
+    <div class="appointment-card">
+      <h3>Appointment Found 💗</h3>
+      <p><strong>Name:</strong> ${customerEscapeHTML(customerAppointment.name)}</p>
+      <p><strong>Date:</strong> ${customerEscapeHTML(customerFormatDate(customerAppointment.date))}</p>
+      <p><strong>Time:</strong> ${customerEscapeHTML(customerFormatTime(customerAppointment.time))}</p>
+      <p><strong>Status:</strong> ${customerEscapeHTML(customerAppointment.status || "Pending Deposit")}</p>
+      <button type="button" class="btn" id="openCustomerReschedule">
+        Reschedule Appointment
+      </button>
+    </div>
+  `;
+
+  document.getElementById("openCustomerReschedule")
+    .addEventListener("click", async () => {
+      rescheduleArea.style.display = "block";
+
+      const dateInput = document.getElementById("newDate");
+      dateInput.min = customerDateString(new Date());
+      dateInput.value = customerAppointment.date;
+
+      await loadCustomerRescheduleTimes();
+    });
+
+  customerMessage("Your appointment was found.");
+}
+
+/* LOAD AVAILABLE TIMES */
+
+async function loadCustomerRescheduleTimes() {
+  const select = document.getElementById("newTime");
+  const date = document.getElementById("newDate").value;
+
+  select.innerHTML = '<option value="">Loading times...</option>';
+
+  if (!customerAppointment) {
+    select.innerHTML = '<option value="">Find your appointment first</option>';
+    return;
+  }
+
+  if (!date) {
+    select.innerHTML = '<option value="">Choose a date first</option>';
+    return;
+  }
+
+  if (date < customerDateString(new Date())) {
+    select.innerHTML = '<option value="">Choose today or a future date</option>';
+    return;
+  }
+
+  const [blockedDateResult, blockedTimeResult, bookingsResult] =
+    await Promise.all([
+      supabaseClient.from("blocked_dates")
+        .select("date")
+        .eq("date", date),
+
+      supabaseClient.from("blocked_times")
+        .select("*")
+        .eq("date", date),
+
+      supabaseClient.from("bookings")
+        .select("id,time,status")
+        .eq("date", date)
+    ]);
+
+  if (blockedDateResult.error ||
+      blockedTimeResult.error ||
+      bookingsResult.error) {
+    console.error(
+      blockedDateResult.error,
+      blockedTimeResult.error,
+      bookingsResult.error
+    );
+
+    select.innerHTML = '<option value="">Could not load availability</option>';
+    return;
+  }
+
+  if ((blockedDateResult.data || []).length > 0) {
+    select.innerHTML = '<option value="">This date is unavailable</option>';
+    return;
+  }
+
+  const blockedTimes = blockedTimeResult.data || [];
+
+  const bookedTimes = (bookingsResult.data || [])
+    .filter(booking =>
+      String(booking.id) !== String(customerAppointment.id) &&
+      booking.status !== "Cancelled"
+    )
+    .map(booking => String(booking.time || "").slice(0, 5));
+
+  select.innerHTML = '<option value="">Choose an available time</option>';
+
+  /* Appointment starts from 9 AM through 7 PM.
+     Each appointment occupies one hour. */
+
+  for (let hour = 9; hour <= 19; hour++) {
+    const time = String(hour).padStart(2, "0") + ":00";
+    const endTime = String(hour + 1).padStart(2, "0") + ":00";
+
+    const overlapsBlockedTime = blockedTimes.some(block =>
+      customerTimeMinutes(time) < customerTimeMinutes(block.end_time) &&
+      customerTimeMinutes(endTime) > customerTimeMinutes(block.start_time)
+    );
+
+    const isCurrentSlot =
+      date === customerAppointment.date &&
+      time === String(customerAppointment.time || "").slice(0, 5);
+
+    if (
+      !overlapsBlockedTime &&
+      (!bookedTimes.includes(time) || isCurrentSlot)
+    ) {
+      const option = document.createElement("option");
+      option.value = time;
+      option.textContent = customerFormatTime(time);
+      select.appendChild(option);
+    }
+  }
+
+  if (select.options.length === 1) {
+    select.innerHTML = '<option value="">No times available</option>';
+    return;
+  }
+
+  if (date === customerAppointment.date) {
+    select.value = String(customerAppointment.time || "").slice(0, 5);
+  }
+}
+
+/* SAVE RESCHEDULE */
+
+async function rescheduleAppointment() {
+  if (!customerAppointment) {
+    customerMessage("Find your appointment first.", true);
+    return;
+  }
+
+  const newDate = document.getElementById("newDate").value;
+  const newTime = document.getElementById("newTime").value;
+
+  if (!newDate || !newTime) {
+    customerMessage("Choose a new date and available time.", true);
+    return;
+  }
+
+  if (newDate < customerDateString(new Date())) {
+    customerMessage("Choose today or a future date.", true);
+    return;
+  }
+
+  if (
+    newDate === customerAppointment.date &&
+    newTime === String(customerAppointment.time || "").slice(0, 5)
+  ) {
+    customerMessage("Choose a different date or time.", true);
+    return;
+  }
+
+  customerMessage("Checking availability...");
+
+  /* Recheck availability immediately before saving. */
+
+  const [blockedDateResult, blockedTimeResult, bookingsResult] =
+    await Promise.all([
+      supabaseClient.from("blocked_dates")
+        .select("date")
+        .eq("date", newDate),
+
+      supabaseClient.from("blocked_times")
+        .select("*")
+        .eq("date", newDate),
+
+      supabaseClient.from("bookings")
+        .select("id,time,status")
+        .eq("date", newDate)
+    ]);
+
+  if (
+    blockedDateResult.error ||
+    blockedTimeResult.error ||
+    bookingsResult.error
+  ) {
+    customerMessage("Could not verify availability. Please try again.", true);
+    return;
+  }
+
+  if ((blockedDateResult.data || []).length > 0) {
+    customerMessage("That date is blocked. Choose another date.", true);
+    return;
+  }
+
+  const start = customerTimeMinutes(newTime);
+  const end = start + 60;
+
+  const overlapsBlockedTime = (blockedTimeResult.data || []).some(block =>
+    start < customerTimeMinutes(block.end_time) &&
+    end > customerTimeMinutes(block.start_time)
+  );
+
+  if (overlapsBlockedTime) {
+    customerMessage("That time is blocked. Choose another time.", true);
+    await loadCustomerRescheduleTimes();
+    return;
+  }
+
+  const slotTaken = (bookingsResult.data || []).some(booking =>
+    String(booking.id) !== String(customerAppointment.id) &&
+    booking.status !== "Cancelled" &&
+    String(booking.time || "").slice(0, 5) === newTime
+  );
+
+  if (slotTaken) {
+    customerMessage("That time has already been booked. Choose another.", true);
+    await loadCustomerRescheduleTimes();
+    return;
+  }
+
+  const oldDate = customerAppointment.date;
+  const oldTime = customerAppointment.time;
+
+  customerMessage("Saving your new appointment...");
+
+  const { data, error } = await supabaseClient
+    .from("bookings")
+    .update({
+      date: newDate,
+      time: newTime,
+      status: "Rescheduled"
+    })
+    .eq("id", customerAppointment.id)
+    .eq("email", document.getElementById("manageEmail").value.trim())
+    .select();
+
+  if (error || !data || data.length === 0) {
+    console.error("Reschedule error:", error);
+    customerMessage(
+      "Could not reschedule. Please contact the nail tech if this keeps happening.",
+      true
+    );
+    return;
+  }
+
+  customerAppointment = data[0];
+
+  /* Try to notify the customer through the existing Edge Function. */
+
+  let message = "Your appointment has been rescheduled successfully! 💗";
+
+  try {
+    const emailResult = await supabaseClient.functions.invoke(
+      "send-status-email",
+      {
+        body: {
+          name: customerAppointment.name,
+          email: customerAppointment.email,
+          status: "Rescheduled",
+          date: newDate,
+          time: newTime,
+          old_date: oldDate,
+          old_time: oldTime
+        }
+      }
+    );
+
+    if (emailResult.error) {
+      console.error("Reschedule email error:", emailResult.error);
+      message += " The confirmation email could not be sent.";
+    } else {
+      message += " Check your email for confirmation.";
+    }
+  } catch (emailError) {
+    console.error("Reschedule email error:", emailError);
+    message += " The confirmation email could not be sent.";
+  }
+
+  customerMessage(message);
+
+  document.getElementById("appointmentResult").innerHTML = `
+    <div class="appointment-card">
+      <h3>Updated Appointment 💗</h3>
+      <p><strong>Date:</strong> ${customerEscapeHTML(customerFormatDate(newDate))}</p>
+      <p><strong>Time:</strong> ${customerEscapeHTML(customerFormatTime(newTime))}</p>
+      <p><strong>Status:</strong> Rescheduled</p>
+    </div>
+  `;
+
+  document.getElementById("rescheduleArea").style.display = "none";
+}
+
+/* Reload times whenever the customer chooses another date. */
+
+document.addEventListener("DOMContentLoaded", () => {
+  const newDateInput = document.getElementById("newDate");
+
+  if (newDateInput) {
+    newDateInput.addEventListener("change", loadCustomerRescheduleTimes);
+  }
+});
+
