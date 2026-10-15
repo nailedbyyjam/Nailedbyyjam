@@ -122,6 +122,92 @@ main{max-width:1100px;margin:auto;padding:24px}
 </section>
 
 <section class="section">
+  
+<!-- WEEKLY BUSINESS HOURS -->
+<div class="section">
+
+  <h2>🕒 Weekly Business Hours</h2>
+
+  <p>Set the regular days and times customers can book.</p>
+
+  <div id="businessHoursEditor">
+    Loading business hours...
+  </div>
+
+  <button
+    class="refresh-button"
+    onclick="saveBusinessHours()"
+  >
+    💗 Save Weekly Hours
+  </button>
+
+  <div
+    id="businessHoursMessage"
+    class="calendar-message"
+  ></div>
+
+</div>
+
+<!-- SPECIAL HOURS -->
+<div class="section">
+
+  <h2>✨ Special Hours for a Date</h2>
+
+  <p>
+    Select a date in the availability calendar below,
+    then set different hours just for that date.
+  </p>
+
+  <div id="specialHoursSelectedDate">
+    Select a date in the calendar first.
+  </div>
+
+  <label for="specialDayOpen">Availability</label>
+  <select id="specialDayOpen">
+    <option value="open">Open with special hours</option>
+    <option value="closed">Closed all day</option>
+  </select>
+
+  <p>
+    <label for="specialOpenTime">Opening time</label>
+    <input id="specialOpenTime" type="time" value="09:00">
+  </p>
+
+  <p>
+    <label for="specialCloseTime">Closing time</label>
+    <input id="specialCloseTime" type="time" value="19:00">
+  </p>
+
+  <p>
+    <label for="specialHoursNote">Note (optional)</label>
+    <input
+      id="specialHoursNote"
+      type="text"
+      placeholder="Example: Leaving early"
+    >
+  </p>
+
+  <button
+    class="refresh-button"
+    onclick="saveSpecialHours()"
+  >
+    Save Special Hours
+  </button>
+
+  <button
+    class="unblock-button"
+    onclick="removeSpecialHours()"
+  >
+    Use Regular Weekly Hours
+  </button>
+
+  <div
+    id="specialHoursMessage"
+    class="calendar-message"
+  ></div>
+
+</div>
+
 <h2>📅 Availability Calendar</h2>
 <p>Select a date to block or unblock the entire day.</p>
 <div class="calendar-top">
