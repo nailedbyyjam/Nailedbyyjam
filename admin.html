@@ -290,16 +290,53 @@ function setMessage(id,text,isError=false){
   el.textContent=text;
   el.className=(id==="calendarMessage"?"calendar-message ":id==="timeBlockMessage"?"time-message ":"action-message ")+(isError?"error-message":"success");
 }
-async function login(){
-  byId("error").textContent="";
-  const email=byId("email").value.trim();
-  const password=byId("password").value;
-  const {data,error}=await supabaseClient.auth.signInWithPassword({email,password});
-  if(error||!data.session){
-    byId("error").textContent="Incorrect email or password.";
+
+async function login() {
+  const errorBox = byId("error");
+  const email = byId("email").value.trim();
+  const password = byId("password").value;
+
+  errorBox.textContent = "";
+
+  if (!email || !password) {
+    errorBox.textContent = "Please enter your email and password.";
     return;
   }
-  showAdmin();
+
+  try {
+    const { data, error } =
+      await supabaseClient.auth.signInWithPassword({
+        email: email,
+        password: password
+      });
+
+    if (error) {
+      console.error("Supabase login error:", error);
+
+      errorBox.textContent =
+        "Login failed: " + error.message;
+
+      return;
+    }
+
+    if (!data || !data.session) {
+      errorBox.textContent =
+        "Login was not completed. Please try again.";
+      return;
+    }
+
+    console.log("Admin authentication successful");
+
+    showAdmin();
+
+  } catch (error) {
+    console.error("Login connection error:", error);
+
+    errorBox.textContent =
+      "Connection error: " + error.message;
+  }
+}
+
 }
 function showAdmin(){
   byId("loginPage").style.display="none";
